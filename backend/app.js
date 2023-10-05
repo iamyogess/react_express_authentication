@@ -19,28 +19,42 @@ const db = mysql.createConnection({
   database: "auth",
 });
 
-app.post("/register", (req, res) => {
-  const sqlQuery =
-    "INSERT INTO login (`username`,`email`,`password`) VALUES (?)";
-  const hashedPassword = bcrypt.hash(
-    req.body.password.toString(),
-    salt,
-    (err) => {
-      if (err) {
-        return res.status(500).json({ error: "Unable to hash password" });
-      } else {
-        return res
-          .status(200)
-          .json({ message: "Password hashed succesfully!" });
-      }
-    }
-  );
-  const values = [req.body.username, req.body.email, hashedPassword];
+// app.post("/register", (req, res) => {
+//   const sqlQuery =
+//     "INSERT INTO login (`username`,`email`,`password`) VALUES (?)";
+//   const hashedPassword = bcrypt.hash(
+//     req.body.password.toString(),
+//     salt,
+//     (err) => {
+//       if (err) {
+//         return res.status(500).json({ error: "Unable to hash password" });
+//       } else {
+//         const values = [req.body.username, req.body.email, hashedPassword];
+//         db.query(sqlQuery, [values], (err, data) => {
+//           if (err)
+//             return res.status(200).json({ error: "Inserting data error" });
+//           return res.status(200).json({ message: "Registered successfully!" });
+//         });
+//       }
+//     }
+//   );
+// });
 
-  db.query(sqlQuery, [values], (err, data) => {
-    if (err) return res.status(200).json({ error: "Inserting data error" });
-    return res.status(200).json({ message: "Registered successfully!" });
-  });
+app.post("/register", async (req, res) => {
+  try {
+    const hashedPassword = await bcrypt.hash(req.body.password.toString(), salt);
+    const sqlQuery = "INSERT INTO login (`username`, `email`, `password`) VALUES (?, ?, ?)";
+    const values = [req.body.username, req.body.email, hashedPassword];
+
+    db.query(sqlQuery, [values], (err, data) => {
+      if (err) {
+        return res.status(500).json({ error: "Inserting data error" });
+      }
+      return res.status(200).json({ message: "Registered successfully!" });
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Unable to hash password" });
+  }
 });
 
 app.get("/", (req, res) => {
